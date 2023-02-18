@@ -13,6 +13,8 @@ import Combine
 final class PrivateActionTestProvider<State, Action, PrivateAction>:
     ProcessorReducerProtocol {
     
+    typealias Output = (Processor<State, Action, PrivateAction>, PrivateAction?, State)
+    
     init(_ processor: Processor<State, Action, PrivateAction>, title: String? = nil) {
         self.reducer = processor.reducer
         self.title = title
@@ -37,6 +39,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
         }
         
         if nextPublisher == nil {
+            
             XCTHandling(nil, expected, release, message, file: "PrivateAction Test - ")
             return nil
         }
@@ -55,7 +58,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
             guard let self,
                   let conti = self.continuation else { return }
             self.continuation = nil
-            conti.resume(returning: self._processor)
+            conti.resume(returning: (self._processor)
             self.processor = nil
         }
     }()
@@ -68,7 +71,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
     
     private typealias PrivateActionEqual = (PrivateAction?) -> Bool
     
-    private var continuation: CheckedContinuation<Processor<State, Action, PrivateAction>, Never>?
+    private var continuation: CheckedContinuation<Output, Never>?
     
     private let _processor: Processor<State, Action, PrivateAction>
     
@@ -77,7 +80,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
 extension PrivateActionTestProvider {
     
     @discardableResult
-    public func privateAction(send privateAction: PrivateAction, _ message: String? = nil, where expected: @escaping (PrivateAction?) -> Bool) async -> Processor<State, Action, PrivateAction> {
+    public func privateAction(send privateAction: PrivateAction, _ message: String? = nil, where expected: @escaping (PrivateAction?) -> Bool) async -> Output {
         
         self.expected = expected
         
@@ -88,7 +91,7 @@ extension PrivateActionTestProvider {
     }
     
     @discardableResult
-    public func privateAction(send privateAction: PrivateAction, equal nextPrivateAction: PrivateAction, _ message: String? = nil) async -> Processor<State, Action, PrivateAction>  where PrivateAction: Equatable {
+    public func privateAction(send privateAction: PrivateAction, equal nextPrivateAction: PrivateAction, _ message: String? = nil) async -> Output  where PrivateAction: Equatable {
         
         let equal: PrivateActionEqual = {
             return nextPrivateAction == $0
