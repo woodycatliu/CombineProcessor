@@ -77,7 +77,6 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
         DispatchQueue(label: "com.AnyProcessor.\(UUID().uuidString)")
     }()
     
-    
 }
 
 extension Processor {
