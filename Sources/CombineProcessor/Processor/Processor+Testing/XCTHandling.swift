@@ -8,13 +8,13 @@
 import Foundation
 @_spi(CurrentTestCase) import XCTestDynamicOverlay
 
-func XCTHandling<Value>(_ value: Value,
-                       _ expected: @escaping (Value) -> Bool,
-                       _ completion: @escaping () -> Void,
-                       _ message: String = "",
+func XCTHandling<Value>(value: Value,
+                       expected: @escaping (Value) -> Bool,
+                       completion: (() -> Void)? = nil,
+                       message: String = "",
                        file: StaticString = #file,
                        line: UInt = #line) {
-    defer { completion() }
+    defer { completion?() }
     guard !expected(value) else { return }
     XCTFail(
           """

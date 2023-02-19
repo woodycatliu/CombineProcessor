@@ -13,7 +13,7 @@ import Combine
 extension Processor {
     
     fileprivate typealias Output = (privateAction: PrivateAction?, state: State)
-
+    
     fileprivate typealias PrivateActionEqual = (PrivateAction?) -> Bool
 }
 
@@ -26,7 +26,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
     init(_ processor: Processor<State, Action, PrivateAction>) {
         self.reducer = processor.reducer
         self.processor = Processor(initialState: processor._state.value, reducer: self)
-        self.processor?.isLogEnable = processor.isLogEnable
+        self.processor?.enableLog = processor.enableLog
         self.processor?.id = processor.id
         self.processor?.logActionDescriotionFirst = processor.logActionDescriotionFirst
     }
@@ -42,7 +42,9 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
         let release = release
         
         if nextPublisher == nil {
-            release(nil)()
+            queue.async {
+                release(nil)()
+            }
             return nil
         }
         
@@ -50,7 +52,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
             release(pri)()
         }).eraseToProcessor()
     }
-                
+    
     let reducer: any ProcessorReducerProtocol<State, Action, PrivateAction>
     
     private lazy var release: (PrivateAction?) -> (() -> Void) = {
@@ -58,8 +60,6 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
             return { [weak self] in
                 guard let self,
                       let conti = self.continuation else { return }
-                self.lock.lock()
-                defer { self.lock.unlock() }
                 let state = self.processor!._state.value
                 self.continuation = nil
                 conti.resume(returning: (pri, state))
@@ -68,12 +68,9 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
         }
     }()
     
-
     private var continuation: CheckedContinuation<Output, Never>?
-        
-    private var processor: Processor<State, Action, PrivateAction>? = nil
     
-    private let lock: NSRecursiveLock = NSRecursiveLock()
+    private var processor: Processor<State, Action, PrivateAction>? = nil
     
     private let queue: DispatchQueue = DispatchQueue(label: "com.PrivateActionTestProvider.test")
     
@@ -92,7 +89,8 @@ extension PrivateActionTestProvider {
 
 extension Processor {
     
-    struct _ProcessorTestPrivoder {
+    struct _ProcessorTestProvider {
+        
         @discardableResult
         fileprivate func privateAction(processor: Processor<State, Action, PrivateAction>,
                                        send privateAction: PrivateAction,
@@ -102,41 +100,52 @@ extension Processor {
             
             let result = await PrivateActionTestProvider(processor).result(send: privateAction)
             
-            XCTHandling(result.privateAction, expected, {}, message ?? "", file: "PrivateAction Test - ")
+            XCTHandling(value: result.privateAction,
+                        expected: expected,
+                        message: message ?? "",
+                        file: "PrivateAction Test - ")
             
             return result
         }
         
+        fileprivate func _ProcessorTestProvider() {}
+        
     }
     
-   public var test: TestPrivoder {
-        return TestPrivoder(self)
+    public var test: TestProvider {
+        return TestProvider(self)
     }
     
-   public func test(_ title: String) -> TestPrivoder {
-        return TestPrivoder(self, title: title)
+    public func test(_ title: String) -> TestProvider {
+        return TestProvider(self, title: title)
     }
     
-    public struct TestPrivoder {
+    public struct TestProvider {
         
         @discardableResult
-        public func privateAction(send privateAction: PrivateAction, message: String? = nil, where expected: @escaping (PrivateAction?) -> Bool) async -> TestPrivoder {
+        public func privateAction(send privateAction: PrivateAction, message: String? = nil, where expected: @escaping (PrivateAction?) -> Bool) async -> TestProvider {
             
-            await _ProcessorTestPrivoder().privateAction(processor: processor, send: privateAction, title: title, message: message, where: expected)
-                        
-            return TestPrivoder(processor, title: nil)
+            await _ProcessorTestProvider().privateAction(processor: processor,
+                                                         send: privateAction,
+                                                         title: title,
+                                                         message: message,
+                                                         where: expected)
+            
+            return TestProvider(processor, title: nil)
         }
         
         @discardableResult
-        public func privateAction(send privateAction: PrivateAction, equal nextPrivateAction: PrivateAction, message: String? = nil) async -> Processor.TestPrivoder where PrivateAction: Equatable {
-
+        public func privateAction(send privateAction: PrivateAction,
+                                  equal nextPrivateAction: PrivateAction,
+                                  message: String? = nil) async -> Processor.TestProvider where PrivateAction: Equatable {
+            
             let expected: (PrivateAction?) -> Bool = {
                 return nextPrivateAction == $0
             }
             
             await self.privateAction(send: privateAction, message: message, where: expected)
             
-            return TestPrivoder(processor, title: nil)
+            return TestProvider(processor, title: nil)
         }
         
         let title: String?
@@ -148,29 +157,37 @@ extension Processor {
         
         private let processor: Processor<State, Action, PrivateAction>
     }
-
+    
 }
 
 extension Processor {
     
-    public var testAndOutput: TestOutputResultPrivoder {
-        return TestOutputResultPrivoder(self)
+    public var testAndOutput: TestOutputResultProvider {
+        return TestOutputResultProvider(self)
     }
     
-    public func testAndOutput(_ title: String) -> TestOutputResultPrivoder {
-         return TestOutputResultPrivoder(self, title: title)
-     }
+    public func testAndOutput(_ title: String) -> TestOutputResultProvider {
+        return TestOutputResultProvider(self, title: title)
+    }
     
-    public struct TestOutputResultPrivoder {
+    public struct TestOutputResultProvider {
         
         @discardableResult
-        public func privateAction(send privateAction: PrivateAction, message: String? = nil, where expected: @escaping (PrivateAction?) -> Bool) async -> PrivateAction? {
+        public func privateAction(send privateAction: PrivateAction,
+                                  message: String? = nil,
+                                  where expected: @escaping (PrivateAction?) -> Bool) async -> PrivateAction? {
             
-            return await _ProcessorTestPrivoder().privateAction(processor: processor, send: privateAction, title: title, message: message, where: expected).privateAction
+            return await _ProcessorTestProvider().privateAction(processor: processor,
+                                                                send: privateAction,
+                                                                title: title,
+                                                                message: message,
+                                                                where: expected).privateAction
         }
         
         @discardableResult
-        public func privateAction(send privateAction: PrivateAction, equal nextPrivateAction: PrivateAction, message: String? = nil) async -> PrivateAction? where PrivateAction: Equatable {
+        public func privateAction(send privateAction: PrivateAction,
+                                  equal nextPrivateAction: PrivateAction,
+                                  message: String? = nil) async -> PrivateAction? where PrivateAction: Equatable {
             
             let expected: (PrivateAction?) -> Bool = {
                 return nextPrivateAction == $0
@@ -190,6 +207,5 @@ extension Processor {
     }
     
 }
-
 
 #endif

@@ -19,7 +19,7 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
     /// default is true
     public var logActionDescriotionFirst: Bool = true
     
-    public var isLogEnable: Bool = true
+    public var enableLog: Bool = true
     
     public var publisher: AnyPublisher<State, Never> {
         return _state.eraseToAnyPublisher()
@@ -93,7 +93,7 @@ fileprivate extension Processor {
     }
     
     func log(obj: Any) {
-        guard isLogEnable else { return }
+        guard enableLog else { return }
         if let privateAction = obj as? PrivateAction {
             _log(privateAction: privateAction)
         } else if let action = obj as? Action {
@@ -126,7 +126,7 @@ fileprivate extension Processor {
     }
    
     func logDivid() {
-        guard isLogEnable else { return }
+        guard enableLog else { return }
         #if DEBUG
         print("\(prefix) -------------------------------------")
         #endif
