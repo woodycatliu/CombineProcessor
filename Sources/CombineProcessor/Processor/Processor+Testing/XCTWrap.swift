@@ -18,7 +18,7 @@ func XCTHandling<Value>(_ value: Value,
     guard !expected(value) else { return }
     XCTFail(
           """
-          XCTHandling failed: expected value is \(value)"\
+          failed: expected value is \(value)"\
           \(message.isEmpty ? "" : " - " + message)
           """,
           file: file,
