@@ -222,7 +222,31 @@ extension Processor {
 }
 
 extension Processor.TestProvider {
+    // MARK: Test and Out put Result
     
+    /*
+     ### Introduction
+     This scope allows the processor to test and output the result of this step, with no side effects on the original processor.
+     
+     - privateAction(_:,_:) -> PrivateAction?
+          Test PrivateAction and out next PrivateAction
+     
+     - state(_:,_:) -> State :
+     
+     ```
+       func testProcessor() async throws {
+     
+           let nextPrivateAction = await processor.test.output.state(send: privaeAction,
+                                                              equal: nextPrivateAction)
+     
+           let state = await processor.test.output.state(send: privaeAction,
+                                                         equal: newState)
+     
+       }
+     
+     ```
+     
+     */
     public var output: TestOutputResultProvider {
         return TestOutputResultProvider(processor)
     }
