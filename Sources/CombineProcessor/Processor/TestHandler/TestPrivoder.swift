@@ -17,8 +17,7 @@ extension Processor {
     fileprivate typealias PrivateActionEqual = (PrivateAction?) -> Bool
 }
 
-
-final class PrivateActionTestProvider<State, Action, PrivateAction>:
+final class ProcessorTestProvider<State, Action, PrivateAction>:
     ProcessorReducerProtocol {
     
     fileprivate typealias Output = (privateAction: PrivateAction?, state: State)
@@ -48,9 +47,12 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
             return nil
         }
         
-        return nextPublisher?.receive(on: queue).handleEvents(receiveOutput: { pri in
-            release(pri)()
-        }).eraseToProcessor()
+        return nextPublisher?
+            .receive(on: queue)
+            .handleEvents(receiveOutput: { pri in
+                release(pri)()
+            })
+            .eraseToProcessor()
     }
     
     let reducer: any ProcessorReducerProtocol<State, Action, PrivateAction>
@@ -76,7 +78,7 @@ final class PrivateActionTestProvider<State, Action, PrivateAction>:
     
 }
 
-extension PrivateActionTestProvider {
+extension ProcessorTestProvider {
     
     @discardableResult
     fileprivate func result(send privateAction: PrivateAction) async -> Output {
@@ -98,12 +100,29 @@ extension Processor {
                                        message: String? = nil,
                                        where expected: @escaping (PrivateAction?) -> Bool) async -> Output {
             
-            let result = await PrivateActionTestProvider(processor).result(send: privateAction)
+            let result = await ProcessorTestProvider(processor).result(send: privateAction)
             
             XCTHandling(value: result.privateAction,
                         expected: expected,
                         message: message ?? "",
                         file: "PrivateAction Test - ")
+            
+            return result
+        }
+        
+        @discardableResult
+        fileprivate func state(processor: Processor<State, Action, PrivateAction>,
+                               send privateAction: PrivateAction,
+                               title: String? = nil,
+                               message: String? = nil,
+                               where expected: @escaping (State) -> Bool) async -> Output {
+            
+            let result = await ProcessorTestProvider(processor).result(send: privateAction)
+            
+            XCTHandling(value: result.state,
+                        expected: expected,
+                        message: message ?? "",
+                        file: "State Test - ")
             
             return result
         }
@@ -123,7 +142,9 @@ extension Processor {
     public struct TestProvider {
         
         @discardableResult
-        public func privateAction(send privateAction: PrivateAction, message: String? = nil, where expected: @escaping (PrivateAction?) -> Bool) async -> TestProvider {
+        public func privateAction(send privateAction: PrivateAction,
+                                  message: String? = nil,
+                                  where expected: @escaping (PrivateAction?) -> Bool) async -> TestProvider {
             
             await _ProcessorTestProvider().privateAction(processor: processor,
                                                          send: privateAction,
@@ -143,9 +164,49 @@ extension Processor {
                 return nextPrivateAction == $0
             }
             
-            await self.privateAction(send: privateAction, message: message, where: expected)
+            return await self.privateAction(send: privateAction,
+                                            message: message,
+                                            where: expected)
+        }
+        
+        @discardableResult
+        fileprivate func state(send privateAction: PrivateAction,
+                               title: String? = nil,
+                               message: String? = nil,
+                               where expected: @escaping (State) -> Bool) async -> Processor.TestProvider {
+            
+            await _ProcessorTestProvider().state(processor: processor,
+                                                 send: privateAction,
+                                                 where: expected)
             
             return TestProvider(processor, title: nil)
+        }
+        
+        @discardableResult
+        public func state(send privateAction: PrivateAction,
+                          equal newState: State,
+                          message: String? = nil) async -> Processor.TestProvider where State: Equatable {
+            let expected: (State) -> Bool = {
+                return newState == $0
+            }
+            
+            return await self.state(send: privateAction,
+                                    message: message,
+                                    where: expected)
+        }
+        
+        @discardableResult
+        public func state<Value>(send privateAction: PrivateAction,
+                          keyPath: KeyPath<State, Value>,
+                          equal newState: State,
+                          message: String? = nil) async -> Processor.TestProvider where Value: Equatable {
+            let expected: (State) -> Bool = {
+                return newState[keyPath: keyPath] == $0[keyPath: keyPath]
+            }
+            
+            return await self.state(send: privateAction,
+                                    message: message,
+                                    where: expected)
         }
         
         let title: String?
@@ -160,14 +221,14 @@ extension Processor {
     
 }
 
-extension Processor {
+extension Processor.TestProvider {
     
-    public var testAndOutput: TestOutputResultProvider {
-        return TestOutputResultProvider(self)
+    public var output: TestOutputResultProvider {
+        return TestOutputResultProvider(processor)
     }
     
-    public func testAndOutput(_ title: String) -> TestOutputResultProvider {
-        return TestOutputResultProvider(self, title: title)
+    public func output(_ title: String) -> TestOutputResultProvider {
+        return TestOutputResultProvider(processor, title: title)
     }
     
     public struct TestOutputResultProvider {
@@ -177,11 +238,11 @@ extension Processor {
                                   message: String? = nil,
                                   where expected: @escaping (PrivateAction?) -> Bool) async -> PrivateAction? {
             
-            return await _ProcessorTestProvider().privateAction(processor: processor,
-                                                                send: privateAction,
-                                                                title: title,
-                                                                message: message,
-                                                                where: expected).privateAction
+            return await Processor._ProcessorTestProvider().privateAction(processor: processor,
+                                                                          send: privateAction,
+                                                                          title: title,
+                                                                          message: message,
+                                                                          where: expected).privateAction
         }
         
         @discardableResult
@@ -193,7 +254,51 @@ extension Processor {
                 return nextPrivateAction == $0
             }
             
-            return await self.privateAction(send: privateAction, message: message, where: expected)
+            return await self.privateAction(send: privateAction,
+                                            message: message,
+                                            where: expected)
+        }
+        
+        @discardableResult
+        fileprivate func state(send privateAction: PrivateAction,
+                               title: String? = nil,
+                               message: String? = nil,
+                               where expected: @escaping (State) -> Bool) async -> State {
+            
+            return await Processor._ProcessorTestProvider().state(processor: processor,
+                                                                  send: privateAction,
+                                                                  title: title,
+                                                                  message: message,
+                                                                  where: expected).state
+        }
+        
+        @discardableResult
+        public func state(send privateAction: PrivateAction,
+                          equal newState: State,
+                          message: String? = nil) async -> State where State: Equatable {
+            
+            let expected: (State) -> Bool = {
+                return newState == $0
+            }
+            
+            return await self.state(send: privateAction,
+                                    title: title,
+                                    message: message,
+                                    where: expected)
+        }
+        
+        @discardableResult
+        public func state<Value>(send privateAction: PrivateAction,
+                          keyPath: KeyPath<State, Value>,
+                          equal newState: State,
+                          message: String? = nil) async -> State where Value: Equatable {
+            let expected: (State) -> Bool = {
+                return newState[keyPath: keyPath] == $0[keyPath: keyPath]
+            }
+            
+            return await self.state(send: privateAction,
+                                    message: message,
+                                    where: expected)
         }
         
         let title: String?
