@@ -68,6 +68,18 @@ extension Publisher {
             .eraseToProcessor()
     }
     
+    public func catchToDeresultProcessor<T>(onSuccess: @escaping (Output) -> T, onError: @escaping (Failure) -> T) -> ProcessorPublisher<T, Never> {
+        return catchToResult()
+            .map {
+                switch $0 {
+                case .success(let value):
+                    return onSuccess(value)
+                case .failure(let error):
+                    return onError(error)
+                }
+            }.eraseToProcessor()
+    }
+    
     fileprivate func catchToResult() -> AnyPublisher<Result<Output, Failure>, Never> {
         return map(Result.success)
             .catch { Just(.failure($0)) }
