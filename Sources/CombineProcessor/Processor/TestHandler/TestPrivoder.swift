@@ -1,6 +1,6 @@
 //
 //  TestPrivoder.swift
-//  
+//
 //
 //  Created by Woody Liu on 2023/2/17.
 //
@@ -102,8 +102,8 @@ extension Processor {
             
             XCTHandling(value: privateAction,
                         expected: expected,
-                        message: message ?? "",
-                        file: "PrivateAction Test - ")
+                        prifix: "PrivateAction Test - ",
+                        message: message ?? "")
             
             return (privateAction: privateAction,
                     state: processor._state.value)
@@ -119,8 +119,8 @@ extension Processor {
             
             XCTHandling(value: result.privateAction,
                         expected: expected,
-                        message: message ?? "",
-                        file: "PrivateAction Test - ")
+                        prifix: "PrivateAction Test - ",
+                        message: message ?? "")
             
             return result
         }
@@ -135,8 +135,8 @@ extension Processor {
             
             XCTHandling(value: result.state,
                         expected: expected,
-                        message: message ?? "",
-                        file: "State Test - ")
+                        prifix: "State Test - ",
+                        message: message ?? "")
             
             return result
         }
