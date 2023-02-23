@@ -8,6 +8,39 @@
 import Foundation
 import Combine
 
+/*
+# Processor.swift
+
+The Processor class is a generic class that provides a way to process actions and private actions and to manage state changes. It is designed to work with Combine framework.
+
+## Properties:
+
+- `id`: a unique identifier for each instance of the Processor class, used for logging and debugging purposes.
+- `logActionDescriotionFirst`: a boolean property that determines whether the description of actions and private actions should be printed first in the log messages. The default value is true.
+- `enableLog`: a boolean property that determines whether logging is enabled. The default value is true.
+- `publisher`: a read-only property that returns an AnyPublisher instance of the current state.
+- `reducer`: an instance of ProcessorReducerProtocol that defines the behavior of the reducer, which takes actions and private actions and mutates the state accordingly.
+- `_state`: a CurrentValueSubject instance that stores the current state.
+- `collection`: a CancellablesCollection instance that stores all the cancellables for the publishers used in the reducer.
+- `queue`: a DispatchQueue instance that is used to handle the cancellables in the collection.
+ 
+## Methods:
+
+- `init(initialState:reducer:environment:)`: a convenience initializer that takes an initial state, a reducer, and an environment, which is used by the reducer to perform its tasks.
+- `init(initialState:reducer:)`: a designated initializer that takes an initial state and a reducer.
+- `send(_:)`: a method that takes an action and sends it to the reducer to process. It then sends the resulting private action to itself to update the state.
+- `_send(privateAction:)`: a private method that takes a private action and sends it to itself to update the state.
+- `subscript<Value>(dynamicMember keyPath: KeyPath<State, Value>) -> Value`: a subscript that allows accessing the properties of the state using the dot syntax.
+ 
+## Private methods:
+
+- `prefix`: a private property that returns a string that includes the first three characters of the processor's id, used in logging messages.
+- `log(obj:)`: a private method that takes an object and logs it if logging is enabled.
+- `_log(action:)`: a private method that logs an action.
+- `_log(privateAction:)`: a private method that logs a private action.
+- `logDivid()`: a private method that logs a divider in the log messages.
+ */
+
 @dynamicMemberLookup
 public final class Processor<State, Action, PrivateAction>: Identifiable {
     
