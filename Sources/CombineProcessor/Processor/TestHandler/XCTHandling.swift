@@ -17,8 +17,9 @@ func XCTHandling<Value>(value: Value,
     guard !expected(value) else { return }
     XCTFail(
           """
-          \(prifix) failed: expected value is \(value)
-          \(message.isEmpty ? "" : "- meessage: " + message)
+          \(prifix) failed ----------------------------------
+          value: \(value) 。
+          \(message.isEmpty ? "" : "meessage: " + message)。
           """
     )
 }
