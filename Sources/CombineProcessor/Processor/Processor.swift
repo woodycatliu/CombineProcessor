@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-/*
+/**
 # Processor.swift
 
 The Processor class is a generic class that provides a way to process actions and private actions and to manage state changes. It is designed to work with Combine framework.
@@ -44,22 +44,27 @@ The Processor class is a generic class that provides a way to process actions an
 @dynamicMemberLookup
 public final class Processor<State, Action, PrivateAction>: Identifiable {
     
-    /// for process log
-    /// default; UUID().uuidString
+    ///`id`: a unique identifier for each instance of the Processor class, used for logging and debugging purposes.
     public var id: String = UUID().uuidString
     
-    /// if Action/PrivateAction has  conformed CustomStringConvertible will be priority description
-    /// default is true
+    /// `logActionDescriotionFirst`: a boolean property that determines whether the description of actions and private actions should be printed first in the log messages. The default value is true.
     public var logActionDescriotionFirst: Bool = true
     
+    /// `enableLog`: a boolean property that determines whether logging is enabled. The default value is true.
     public var enableLog: Bool = true
     
+    /// `publisher`: a read-only property that returns an AnyPublisher instance of the current state.
     public var publisher: AnyPublisher<State, Never> {
         return _state.eraseToAnyPublisher()
     }
     
     public typealias Mutated = (_ action: Action) -> PrivateAction
     
+    /// `init(initialState:reducer:environment:)`: a convenience initializer that takes an initial state, a reducer, and an environment, which is used by the reducer to perform its tasks.
+    /// - Parameters:
+    ///   - initialState: Default State
+    ///   - reducer: `reducer`: an instance of ProcessorReducerProtocol that defines the behavior of the reducer, which takes actions and private actions and mutates the state accordingly.
+    ///   - environment: Injection use case or any other model
     public convenience init<Environment>(initialState: State,
                      reducer: AnyProcessorReducer<State, Action, PrivateAction, Environment>,
                         environment: Environment) {
@@ -76,6 +81,8 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
         self._state = .init(initialState)
     }
     
+    /// `send(_:)`: a method that takes an action and sends it to the reducer to process. It then sends the resulting private action to itself to update the state.
+    /// - Parameter action: request a command
     public func send(_ action: Action) {
         log(obj: action)
         let privatization = reducer.transform(action)
@@ -100,8 +107,10 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
         }
     }
     
+    /// `reducer`: an instance of ProcessorReducerProtocol that defines the behavior of the reducer, which takes actions and private actions and mutates the state accordingly.
     let reducer: any ProcessorReducerProtocol<State, Action, PrivateAction>
     
+    /// `_state`: a CurrentValueSubject instance that stores the current state.
     let _state: CurrentValueSubject<State, Never>
     
     let collection: CancellablesCollection = CancellablesCollection()

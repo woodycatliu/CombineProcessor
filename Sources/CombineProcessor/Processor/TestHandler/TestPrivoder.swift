@@ -17,6 +17,29 @@ extension Processor {
     fileprivate typealias PrivateActionEqual = (PrivateAction?) -> Bool
 }
 
+/**
+# Documentation for ProcessorTestProvider Class
+
+ The ProcessorTestProvider class is a final class that implements the ProcessorReducerProtocol protocol. It is designed to provide testing capabilities for the Processor class.
+
+ ## Properties
+
+ - `reducer` : a property of type any ProcessorReducerProtocol<State, Action, PrivateAction>. It represents the reducer that the processor test provider uses to transform actions and reduce state.
+ Methods
+
+ - `init(_ processor: Processor<State, Action, PrivateAction>)` : a designated initializer that takes a Processor instance and sets up the test provider with the same initial state and reducer. It also sets the same logging and identification properties.
+ - `transform(_ action: Action) -> PrivateAction` : a method that transforms an action to a private action using the reducer.
+ - `reducing(state: inout State, privateAction privatization: PrivateAction) -> ProcessorPublisher<PrivateAction, Never>?` : a method that reduces state given a private action. It returns a ProcessorPublisher that emits a private action and never fails.
+ - `release: (PrivateAction?) -> (() -> Void)` : a private property that returns a closure that releases a private action to a CheckedContinuation.
+ - `continuation` : CheckedContinuation<Output, Never>?: a private property that holds a CheckedContinuation instance.
+ - `processor` : Processor<State, Action, PrivateAction>?: a private property that holds a reference to the Processor instance used by the test provider.
+ - `queue`: DispatchQueue: a private property that holds a reference to a DispatchQueue instance used by the test provider.
+ 
+ ## Extensions
+
+ - `fileprivate typealias Output = (privateAction: PrivateAction?, state: State)` : an extension that defines a type alias for the output of the processor, which is a tuple consisting of an optional private action and the state.
+ - `fileprivate typealias PrivateActionEqual = (PrivateAction?) -> Bool` : an extension that defines a type alias for a function that compares two private actions and returns a Boolean value indicating whether they are equal.
+ */
 final class ProcessorTestProvider<State, Action, PrivateAction>:
     ProcessorReducerProtocol {
     
@@ -81,6 +104,10 @@ final class ProcessorTestProvider<State, Action, PrivateAction>:
 extension ProcessorTestProvider {
     
     @discardableResult
+    /// This method sends a private action to the processor and waits for the next output to be emitted.
+    /// - Parameter privateAction: a parameter of type PrivateAction. It represents the private action to be sent to the processor.
+    /// - Returns:
+    ///        - `Output`: a tuple consisting of an optional private action and the state.
     fileprivate func result(send privateAction: PrivateAction) async -> Output {
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
@@ -89,8 +116,28 @@ extension ProcessorTestProvider {
     }
 }
 
+/**
+# Processor
+ 
+ The Processor class includes several methods that aid in testing
+ 
+ ## Properties
+  - `test` : TestProvider - This property returns a TestProvider instance.
+ - `test(_ title: String) -> TestProvider` :  This method returns a TestProvider instance with a specified title.
+ */
 extension Processor {
     
+    /**
+     # _ProcessorTestProvider
+
+     The _ProcessorTestProvider struct includes private methods that are used to support the public methods of TestProvider.
+     
+     ## Methods
+     
+     - `privateAction(processor: Processor<State, Action, PrivateAction>, sendAction action: Action, message: String?, where expected: @escaping (PrivateAction?) -> Bool) async -> Output` :  This method sends an action and returns the Output instance.
+     - `privateAction(processor: Processor<State, Action, PrivateAction>, send privateAction: PrivateAction, message: String?, where expected: @escaping (PrivateAction?) -> Bool) async -> Output`:   This method sends a private action and returns the Output instance.
+     - `state(processor: Processor<State, Action, PrivateAction>, send privateAction: PrivateAction, message: String?, where expected: @escaping (State) -> Bool) async -> Output` :   This method sends a private action and returns the Output instance.
+     */
     struct _ProcessorTestProvider {
         
         @discardableResult
@@ -153,6 +200,24 @@ extension Processor {
         return TestProvider(self, title: title)
     }
     
+    /**
+    # TestProvider
+     The TestProvider struct is used to provide several testing methods.
+     
+     ## Properties
+     - `title: String?` :  This property contains the title for the TestProvider instance.
+     
+     ## Methods
+     
+     - `privateAction(sendAction action: Action, message: String?, where expected: (PrivateAction?) -> Bool) async -> TestProvider` :  This method sends an action and returns the TestProvider instance.
+     
+     - `privateAction(sendAction action: Action, equal nextPrivateAction: PrivateAction, message: String?) async -> Processor.TestProvider where PrivateAction: Equatable` :   This method sends an action and checks if the expected private action is equal to the next private action.
+     - `privateAction(send privateAction: PrivateAction, message: String?, where expected: (PrivateAction?) -> Bool) async -> TestProvider` :  This method sends a private action and returns the TestProvider instance.
+     - `privateAction(send privateAction: PrivateAction, equal nextPrivateAction: PrivateAction, message: String?) async -> Processor.TestProvider where PrivateAction: Equatable` :  This method sends a private action and checks if the expected private action is equal to the next private action.
+     - ` state(send privateAction: PrivateAction, title: String?, message: String?, where expected: (State) -> Bool) async -> Processor.TestProvider` :  This method sends a private action and returns the TestProvider instance.
+     - `state(send privateAction: PrivateAction, equal newState: State, message: String?) async -> Processor.TestProvider where State: Equatable` :  This method sends a private action and checks if the expected state is equal to the next state.
+     - `state<Value>(send privateAction: PrivateAction, keyPath: KeyPath<State, Value>, equal newState: State, message: String?) async -> Processor.TestProvider where Value: Equatable` :  This method sends a private action and checks if the expected keyPath is equal to the next state.
+     */
     public struct TestProvider {
         
         @discardableResult
@@ -262,31 +327,8 @@ extension Processor {
 }
 
 extension Processor.TestProvider {
-    // MARK: Test and Out put Result
     
-    /*
-     ### Introduction
-     This scope allows the processor to test and output the result of this step, with no side effects on the original processor.
-     
-     - privateAction(_:,_:) -> PrivateAction?
-     Test PrivateAction and out next PrivateAction
-     
-     - state(_:,_:) -> State :
-     
-     ```
-     func testProcessor() async throws {
-     
-     let nextPrivateAction = await processor.test.output.state(send: privaeAction,
-     equal: nextPrivateAction)
-     
-     let state = await processor.test.output.state(send: privaeAction,
-     equal: newState)
-     
-     }
-     
-     ```
-     
-     */
+    /// The output property is a computed property that returns a structure which provides several methods for testing the output of the specified type.
     public var output: TestOutputResultProvider {
         return TestOutputResultProvider(processor, title: title)
     }
@@ -294,6 +336,12 @@ extension Processor.TestProvider {
     public struct TestOutputResultProvider {
         
         @discardableResult
+        /// For testing next private action
+        /// - Parameters:
+        ///   - action: enter `Action`
+        ///   - message: the message will show if failed
+        ///   - expected: Inject a closure to verify if the next `PrivateAction` matches the expected one.
+        /// - Returns: Current `PrivateAction`
         public func privateAction(sendAction action: Action,
                                   message: String? = nil,
                                   where expected: @escaping (PrivateAction?) -> Bool) async -> PrivateAction {
@@ -304,6 +352,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test the next `PrivateAction` when the `PrivateAction` type confirms to Equatable,
+        /// - Parameters:
+        ///   - action: enter `Action`
+        ///   - message: the message will show if failed
+        ///   - nextPrivateAction: experted next `PrivateAction`
+        /// - Returns: Current `PrivateAction`
         public func privateAction(sendAction action: Action,
                                   equal nextPrivateAction: PrivateAction,
                                   message: String? = nil) async -> PrivateAction where PrivateAction: Equatable {
@@ -318,6 +372,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test if the next `PrivateAction` will be nil.
+        /// - Parameters:
+        ///   - action: enter `Action`
+        ///   - message: the message will show if failed
+        ///   - expected: Inject a closure to verify if the next `PrivateAction` matches the expected one.`
+        /// - Returns:  Nullable `PrivateAction`
         public func privateAction(send privateAction: PrivateAction,
                                   message: String? = nil,
                                   where expected: @escaping (PrivateAction?) -> Bool) async -> PrivateAction? {
@@ -329,6 +389,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test if the next `PrivateAction` will be nil.
+        /// - Parameters:
+        ///   - action: enter `Action`
+        ///   - nextPrivateAction: experted next `PrivateAction`
+        ///   - message: the message will show if failed
+        /// - Returns:  Nullable `PrivateAction`
         public func privateAction(send privateAction: PrivateAction,
                                   equal nextPrivateAction: PrivateAction,
                                   message: String? = nil) async -> PrivateAction? where PrivateAction: Equatable {
@@ -343,6 +409,13 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test the stored `State` after executing the `PrivateAction`.
+        /// - Parameters:
+        ///   - privateAction: PrivateAction
+        ///   - title: Testing Title
+        ///   - message: Failed message
+        ///   - expected: Inject a closure to verify if the `States` matches the expected one.`
+        /// - Returns: Current `State`
         fileprivate func state(send privateAction: PrivateAction,
                                title: String? = nil,
                                message: String? = nil,
@@ -355,6 +428,13 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test the stored `State` after executing the `PrivateAction`.
+        /// - Parameters:
+        ///   - privateAction: PrivateAction
+        ///   - title: Testing Title
+        ///   - message: Failed message
+        ///   - expected: Inject a closure to verify if the `States` matches the expected one.`
+        /// - Returns: Current `State`
         public func state(send privateAction: PrivateAction,
                           equal newState: State,
                           message: String? = nil) async -> State where State: Equatable {
@@ -370,6 +450,13 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test the stored `State` after executing the `PrivateAction`.
+        /// - Parameters:
+        ///   - privateAction: PrivateAction
+        ///   - title: Testing Title
+        ///   - message: Failed message
+        ///   - expected: Inject a closure to verify if the `States` matches the expected one.`
+        /// - Returns: Current `State`
         public func state<Value>(send privateAction: PrivateAction,
                                  keyPath: KeyPath<State, Value>,
                                  equal newState: State,
@@ -397,6 +484,16 @@ extension Processor.TestProvider {
 
 extension Processor.TestProvider {
     
+    /// `composable` provides a comprehensive testing process.
+    ///  Example :  PrivateAction.A -> PrivateAction.B -> PrivateAction.C
+    ///  ```
+    ///     let processor = Processor()
+    ///
+    ///     await processor.composable
+    ///                    .privateAction(sendAction: Action.A, equal: PrivateAction.A)
+    ///                    .nextAction(equal: PrivateAction.B)
+    ///                    .nextAction(equal: PrivateAction.C)
+    ///  ```
     public var composable: ComposableTestProvider {
         return ComposableTestProvider(processor, title: title)
     }
@@ -404,6 +501,12 @@ extension Processor.TestProvider {
     public struct ComposableTestProvider {
         
         @discardableResult
+        /// To test next `PrivateAction` after enter `Action.`
+        /// - Parameters:
+        ///   - action: enter `Action`
+        ///   - expected: Inject a closure to verify if the next `PrivateAction` matches the expected one.`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func privateAction(sendAction action: Action,
                                   message: String? = nil,
                                   where expected: @escaping (PrivateAction?) -> Bool) async -> CombinedTestProvider {
@@ -417,6 +520,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test next `PrivateAction` after enter `Action.`
+        /// - Parameters:
+        ///   - action: enter `Action`
+        ///   - equal: experted next `PrivateACtion`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func privateAction(sendAction action: Action,
                                   equal nextPrivateAction: PrivateAction,
                                   message: String? = nil) async -> CombinedTestProvider where PrivateAction: Equatable {
@@ -431,6 +540,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test next `PrivateAction` after enter `PrivateAction.`
+        /// - Parameters:
+        ///   - privateAction: enter `PrivateAction`
+        ///   - expected: Inject a closure to verify if the next `PrivateAction` matches the expected one.`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func privateAction(send privateAction: PrivateAction,
                                   message: String? = nil,
                                   where expected: @escaping (PrivateAction?) -> Bool) async -> CombinedTestProvider {
@@ -446,6 +561,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test next `PrivateAction` after enter `PrivateAction.`
+        /// - Parameters:
+        ///   - privateAction: enter `PrivateAction`
+        ///   - nextPrivateAction: expected next `PrivateAction` matches the expected one.`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func privateAction(send privateAction: PrivateAction,
                                   equal nextPrivateAction: PrivateAction,
                                   message: String? = nil) async -> CombinedTestProvider where PrivateAction: Equatable {
@@ -460,6 +581,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test `State` after enter `PrivateAction.`
+        /// - Parameters:
+        ///   - privateAction: enter `PrivateAction`
+        ///   - expected: Inject a closure to verify if the next `State` matches the expected one.`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         fileprivate func state(send privateAction: PrivateAction,
                                message: String? = nil,
                                where expected: @escaping (State) -> Bool) async -> CombinedTestProvider {
@@ -474,6 +601,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test `State` after enter `PrivateAction.`
+        /// - Parameters:
+        ///   - privateAction: enter `PrivateAction`
+        ///   - newState: expected next `State` matches the expected one.`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func state(send privateAction: PrivateAction,
                           equal newState: State,
                           message: String? = nil) async -> CombinedTestProvider where State: Equatable {
@@ -488,6 +621,13 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// To test `State`properties after enter `PrivateAction.`
+        /// - Parameters:
+        ///   - privateAction: enter `PrivateAction`
+        ///   - keyPath: Keypath withIn State
+        ///   - newState: expected next `State` matches the expected one.`
+        ///   - message: the message will show if failed
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func state<Value>(send privateAction: PrivateAction,
                                  keyPath: KeyPath<State, Value>,
                                  equal newState: State,
@@ -516,6 +656,12 @@ extension Processor.TestProvider {
     public struct CombinedTestProvider {
         
         @discardableResult
+        
+        /// Combined to testing next `PrivateAction`
+        /// - Parameters:
+        ///   - message:  the message will show if failed
+        ///   - expected: Inject a closure to verify if the next `State` matches the expected one.`
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func nextPrivateAction(message: String? = nil,
                                       where expected: @escaping (PrivateAction?) -> Bool) async -> CombinedTestProvider {
             
@@ -526,6 +672,11 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// Combined to testing next `PrivateAction`
+        /// - Parameters:
+        ///   - message: the message will show if failed
+        ///   - nextPrivateAction: expected next `PrivateAction` matches the expected one.`
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func nextPrivateAction(equal nextPrivateAction: PrivateAction,
                                       message: String? = nil) async -> CombinedTestProvider where PrivateAction: Equatable {
             
@@ -537,6 +688,11 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// Combined to testing next `State`
+        /// - Parameters:
+        ///   - message:  the message will show if failed
+        ///   - expected: Inject a closure to verify if the next `State` matches the expected one.`
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func nextState(message: String? = nil,
                               where expected: @escaping (State) -> Bool) async -> CombinedTestProvider {
             
@@ -547,6 +703,11 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// Combined to testing next `State`
+        /// - Parameters:
+        ///   - message:  the message will show if failed
+        ///   - newState: expected next `State` matches the expected one.`
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func nextState(equal newState: State,
                               message: String? = nil) async -> CombinedTestProvider where State: Equatable {
             
@@ -558,6 +719,12 @@ extension Processor.TestProvider {
         }
         
         @discardableResult
+        /// Combined to testing next `State`
+        /// - Parameters:
+        ///   - keyPath: Keypath withIn State
+        ///   - message: the message will show if failed
+        ///   - newState: expected next `State` matches the expected one.`
+        /// - Returns: `CombinedTestProvider` provider next `PrivateAction` or `State`  after executing the current `PrivateAction`
         public func nextState<Value>(keyPath: KeyPath<State, Value>,
                                      equal newState: State,
                                      message: String? = nil) async -> CombinedTestProvider where Value: Equatable {
@@ -570,6 +737,11 @@ extension Processor.TestProvider {
                                         where: expected)
         }
         
+        /// To test the final step of the entire process.
+        ///  `Point`: `The PrivateAction` is always nil in final step .
+        /// - Parameters:
+        ///   - message: the message will show if failed
+        ///   - expected: Inject a closure to verify if the next `State` matches the expected one.`
         public func final(message: String? = nil, whereState expected: @escaping (State) -> Bool) async {
             
             await self.nextPrivateAction(message: message, where: {
@@ -579,6 +751,11 @@ extension Processor.TestProvider {
            await self.nextState(message: message, where: expected)
         }
         
+        /// To test the final step of the entire process.
+        ///  `Point`: `The PrivateAction` is always nil in final step .
+        /// - Parameters:
+        ///   - message: the message will show if failed
+        ///   - newState: expected next `State` matches the expected one.
         public func final(equal newState: State, message: String? = nil) async where State : Equatable {
             
             await self.nextPrivateAction(message: message, where: {
@@ -588,6 +765,12 @@ extension Processor.TestProvider {
             await self.nextState(equal: newState, message: message)
         }
         
+        /// To test the final step of the entire process.
+        ///  `Point`: `The PrivateAction` is always nil in final step .
+        /// - Parameters:
+        ///   - keyPath: Keypath withIn State
+        ///   - message: the message will show if failed
+        ///   - newState: expected next `State` matches the expected one.
         public func final<Value>(keyPath: KeyPath<State, Value>, equal newState: State, message: String? = nil) async where Value : Equatable {
             
             await self.nextPrivateAction(message: message, where: {
