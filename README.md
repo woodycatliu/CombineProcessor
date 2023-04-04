@@ -64,6 +64,6 @@ It particularly shows many shades of `TCA`, so if you are already familiar with 
  
  ```
  
-~ [Please refer to the example for detail]() ~
+*[Please refer to the example for detail]()*
 
 
