@@ -5,7 +5,8 @@
 
 ## Introduce
 
-      `CombineProcessor` is a lightweight Swift library that was developed with reference to both  [The Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture) and  [Redux](https://cn.redux.js.org/). It particularly shows many shades of `TCA`, so if you are already familiar with `TCA`, then `CombineProcessor` should not be a problem for you.
+`CombineProcessor` is a lightweight Swift library that was developed with reference to both  [The Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture) and  [Redux](https://cn.redux.js.org/). 
+It particularly shows many shades of `TCA`, so if you are already familiar with `TCA`, then `CombineProcessor` should not be a problem for you.
 
 `CombineProcessor` provides an extremely lightweight state management machine with a limited API, which is particularly useful for quickly developing any app with complex and repetitive workflows. Unlike `TCA`, `CombineProcessor` is just a simple state machine framework that does not provide any UI layer API, but rather focuses only on the input and output of an independent layer (such as the View Model, Manager, and Controller).
 
