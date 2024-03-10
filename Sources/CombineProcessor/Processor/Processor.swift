@@ -53,6 +53,8 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
     /// `enableLog`: a boolean property that determines whether logging is enabled. The default value is true.
     public var enableLog: Bool = true
     
+    public var autoCancelLatestAction: Bool = false
+    
     /// `publisher`: a read-only property that returns an AnyPublisher instance of the current state.
     public var publisher: AnyPublisher<State, Never> {
         return _state.eraseToAnyPublisher()
@@ -85,8 +87,13 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
     /// - Parameter action: request a command
     public func send(_ action: Action) {
         log(obj: action)
+        if autoCancelLatestAction { cancelAllAction() }
         let privatization = reducer.transform(action)
         _send(privateAction: privatization)
+    }
+    
+    public func cancelAllAction() {
+        collection.cancelAll()
     }
     
     func _send(privateAction privatization: PrivateAction) {

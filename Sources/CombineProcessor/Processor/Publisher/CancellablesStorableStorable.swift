@@ -67,6 +67,15 @@ class CancellablesCollection: CancellablesStorableStorable {
         storage[id] = nil
     }
     
+    public func cancelAll() {
+        storage.forEach { _, list in
+            list.forEach { c in
+                c.cancel()
+            }
+        }
+        storage = .init()
+    }
+    
     public func remove(_ id: String, cancelable: AnyCancellable?) {
         if let cancelable = cancelable,
            storage[id] != nil,
@@ -84,6 +93,8 @@ class CancellablesCollection: CancellablesStorableStorable {
         }
         
         get {
+            defer { lock.unlock() }
+            lock.lock()
             return _storage
         }
     }
