@@ -44,6 +44,9 @@ The Processor class is a generic class that provides a way to process actions an
 @dynamicMemberLookup
 public final class Processor<State, Action, PrivateAction>: Identifiable {
     
+    /// name: Define the name of the process.
+    public var name: String?
+    
     ///`id`: a unique identifier for each instance of the Processor class, used for logging and debugging purposes.
     public var id: String = UUID().uuidString
     
@@ -52,6 +55,8 @@ public final class Processor<State, Action, PrivateAction>: Identifiable {
     
     /// `enableLog`: a boolean property that determines whether logging is enabled. The default value is true.
     public var enableLog: Bool = true
+    
+    public var logger: ProcessorLogger = Processor.Logger()
     
     public var autoCancelLatestAction: Bool = false
     
@@ -137,7 +142,8 @@ extension Processor {
 fileprivate extension Processor {
     
     private var prefix: String {
-        return "Processor ID: \(id.prefix(3)) -"
+        let _prefix = name ?? String(id.prefix(3))
+        return "[Processor][\(_prefix)]"
     }
     
     func log(obj: Any) {
@@ -153,11 +159,11 @@ fileprivate extension Processor {
       #if DEBUG
         if let act = action as? CustomStringConvertible,
            logActionDescriotionFirst {
-            print("\(prefix) - Action - \(act.description) - date: \(Date())")
+            logger.log("\(prefix)[Action] \(act.description) - date: \(Date())")
             return
         }
         
-        print("\(prefix) - Action - \(dump(action)) - date: \(Date())")
+        logger.log("\(prefix)[Action] \(dump(action)) - date: \(Date())")
       #endif
     }
     
@@ -165,19 +171,29 @@ fileprivate extension Processor {
         #if DEBUG
         if let act = privateAction as? CustomStringConvertible,
            logActionDescriotionFirst {
-            print("\(prefix) - PrivateAction - \(act.description) - date: \(Date())")
+            logger.log("\(prefix)[PrivateAction]\(act.description) - date: \(Date())")
             return
         }
         
-        print("\(prefix) - PrivateAction - \(dump(privateAction)) - date: \(Date())")
+        logger.log("\(prefix)[PrivateAction] \(dump(privateAction)) - date: \(Date())")
         #endif
     }
    
     func logDivid() {
         guard enableLog else { return }
         #if DEBUG
-        print("\(prefix) -------------------------------------")
+        logger.log("\(prefix) End -------------------------------------")
         #endif
     }
  
+}
+
+extension Processor {
+    struct Logger: ProcessorLogger {
+        func log(_ message: String) {
+          #if DEBUG
+            NSLog(message)
+          #endif
+        }
+    }
 }
